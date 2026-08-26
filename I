@@ -1,0 +1,437 @@
+--// Rayfield-style Movement Interface
+--// For your own Roblox game
+--// Key: 2048
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local KEY = "2048"
+local MAX_SPEED = 300
+
+local Character
+local Humanoid
+local RootPart
+
+local Noclip = false
+local Fly = false
+local Speed = 16
+
+local function SetupCharacter(char)
+	Character = char
+	Humanoid = char:WaitForChild("Humanoid")
+	RootPart = char:WaitForChild("HumanoidRootPart")
+
+	Humanoid.WalkSpeed = Speed
+end
+
+if Player.Character then
+	SetupCharacter(Player.Character)
+end
+
+Player.CharacterAdded:Connect(function(char)
+	SetupCharacter(char)
+end)
+
+--// GUI
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "MovementInterface"
+Gui.ResetOnSpawn = false
+Gui.Parent = PlayerGui
+
+--// Key Window
+local KeyFrame = Instance.new("Frame")
+KeyFrame.Size = UDim2.fromOffset(430, 230)
+KeyFrame.Position = UDim2.new(0.5, -215, 0.5, -115)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+KeyFrame.BorderSizePixel = 0
+KeyFrame.Parent = Gui
+
+local KeyCorner = Instance.new("UICorner")
+KeyCorner.CornerRadius = UDim.new(0, 10)
+KeyCorner.Parent = KeyFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -30, 0, 35)
+Title.Position = UDim2.fromOffset(15, 12)
+Title.BackgroundTransparency = 1
+Title.Text = "Epic Hub V3"
+Title.TextColor3 = Color3.fromRGB(245,245,245)
+Title.TextSize = 24
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = KeyFrame
+
+local SubTitle = Instance.new("TextLabel")
+SubTitle.Size = UDim2.new(1, -30, 0, 22)
+SubTitle.Position = UDim2.fromOffset(15, 43)
+SubTitle.BackgroundTransparency = 1
+SubTitle.Text = "Key System"
+SubTitle.TextColor3 = Color3.fromRGB(180,180,180)
+SubTitle.TextSize = 14
+SubTitle.Font = Enum.Font.Gotham
+SubTitle.TextXAlignment = Enum.TextXAlignment.Left
+SubTitle.Parent = KeyFrame
+
+local KeyBox = Instance.new("TextBox")
+KeyBox.Size = UDim2.fromOffset(220, 55)
+KeyBox.Position = UDim2.fromOffset(20, 85)
+KeyBox.BackgroundColor3 = Color3.fromRGB(48,48,48)
+KeyBox.BorderSizePixel = 0
+KeyBox.PlaceholderText = "passkey"
+KeyBox.Text = ""
+KeyBox.TextColor3 = Color3.fromRGB(240,240,240)
+KeyBox.PlaceholderColor3 = Color3.fromRGB(150,150,150)
+KeyBox.TextSize = 17
+KeyBox.Font = Enum.Font.Gotham
+KeyBox.Parent = KeyFrame
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0,8)
+BoxCorner.Parent = KeyBox
+
+local Note = Instance.new("TextLabel")
+Note.Size = UDim2.fromOffset(160, 70)
+Note.Position = UDim2.fromOffset(255, 82)
+Note.BackgroundTransparency = 1
+Note.Text = "Key\nEnter key 2048 to continue"
+Note.TextColor3 = Color3.fromRGB(210,210,210)
+Note.TextSize = 14
+Note.Font = Enum.Font.Gotham
+Note.TextWrapped = true
+Note.TextXAlignment = Enum.TextXAlignment.Left
+Note.TextYAlignment = Enum.TextYAlignment.Top
+Note.Parent = KeyFrame
+
+local Enter = Instance.new("TextButton")
+Enter.Size = UDim2.fromOffset(180, 40)
+Enter.Position = UDim2.fromOffset(20, 165)
+Enter.BackgroundColor3 = Color3.fromRGB(55,120,190)
+Enter.BorderSizePixel = 0
+Enter.Text = "ENTER"
+Enter.TextColor3 = Color3.new(1,1,1)
+Enter.TextSize = 16
+Enter.Font = Enum.Font.GothamBold
+Enter.Parent = KeyFrame
+
+local EnterCorner = Instance.new("UICorner")
+EnterCorner.CornerRadius = UDim.new(0,8)
+EnterCorner.Parent = Enter
+
+--// Main UI
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(520, 430)
+Main.Position = UDim2.new(0.5, -260, 0.5, -215)
+Main.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Main.BorderSizePixel = 0
+Main.Visible = false
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0,10)
+MainCorner.Parent = Main
+
+local Header = Instance.new("TextLabel")
+Header.Size = UDim2.new(1, -50, 0, 55)
+Header.Position = UDim2.fromOffset(20, 5)
+Header.BackgroundTransparency = 1
+Header.Text = "Rayfield Interface Suite"
+Header.TextColor3 = Color3.fromRGB(245,245,245)
+Header.TextSize = 22
+Header.Font = Enum.Font.GothamBold
+Header.TextXAlignment = Enum.TextXAlignment.Left
+Header.Parent = Main
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(40,40)
+Close.Position = UDim2.new(1,-50,0,10)
+Close.BackgroundTransparency = 1
+Close.Text = "×"
+Close.TextColor3 = Color3.fromRGB(220,220,220)
+Close.TextSize = 30
+Close.Parent = Main
+
+local function CreateToggle(text, y)
+	local Button = Instance.new("TextButton")
+	Button.Size = UDim2.new(1,-40,0,60)
+	Button.Position = UDim2.fromOffset(20,y)
+	Button.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	Button.BorderSizePixel = 0
+	Button.Text = text .. "     OFF"
+	Button.TextColor3 = Color3.fromRGB(235,235,235)
+	Button.TextSize = 17
+	Button.Font = Enum.Font.GothamBold
+	Button.TextXAlignment = Enum.TextXAlignment.Left
+	Button.Parent = Main
+
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0,8)
+	Corner.Parent = Button
+
+	return Button
+end
+
+local NoclipButton = CreateToggle("Noclip",75)
+local FlyButton = CreateToggle("Fly",145)
+
+--// Speed section
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Size = UDim2.new(1,-40,0,30)
+SpeedLabel.Position = UDim2.fromOffset(20,220)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "Walk Speed: 16 / 300"
+SpeedLabel.TextColor3 = Color3.fromRGB(235,235,235)
+SpeedLabel.TextSize = 17
+SpeedLabel.Font = Enum.Font.GothamBold
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+SpeedLabel.Parent = Main
+
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Size = UDim2.new(1,-40,0,55)
+SpeedBox.Position = UDim2.fromOffset(20,255)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(45,45,45)
+SpeedBox.BorderSizePixel = 0
+SpeedBox.Text = "16"
+SpeedBox.PlaceholderText = "1 - 300"
+SpeedBox.TextColor3 = Color3.fromRGB(255,255,255)
+SpeedBox.TextSize = 18
+SpeedBox.Font = Enum.Font.Gotham
+SpeedBox.Parent = Main
+
+local SpeedCorner = Instance.new("UICorner")
+SpeedCorner.CornerRadius = UDim.new(0,8)
+SpeedCorner.Parent = SpeedBox
+
+local ResetButton = Instance.new("TextButton")
+ResetButton.Size = UDim2.new(1,-40,0,45)
+ResetButton.Position = UDim2.fromOffset(20,320)
+ResetButton.BackgroundColor3 = Color3.fromRGB(55,55,55)
+ResetButton.BorderSizePixel = 0
+ResetButton.Text = "Reset Speed"
+ResetButton.TextColor3 = Color3.fromRGB(240,240,240)
+ResetButton.TextSize = 16
+ResetButton.Font = Enum.Font.GothamBold
+ResetButton.Parent = Main
+
+local ResetCorner = Instance.new("UICorner")
+ResetCorner.CornerRadius = UDim.new(0,8)
+ResetCorner.Parent = ResetButton
+
+--// Key verification
+Enter.MouseButton1Click:Connect(function()
+	if KeyBox.Text == KEY then
+		KeyFrame.Visible = false
+		Main.Visible = true
+	else
+		KeyBox.Text = ""
+		KeyBox.PlaceholderText = "Wrong Key!"
+	end
+end)
+
+KeyBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed and KeyBox.Text == KEY then
+		KeyFrame.Visible = false
+		Main.Visible = true
+	end
+end)
+
+--// Noclip
+NoclipButton.MouseButton1Click:Connect(function()
+	Noclip = not Noclip
+
+	if Noclip then
+		NoclipButton.Text = "Noclip     ON"
+		NoclipButton.BackgroundColor3 = Color3.fromRGB(45,110,70)
+	else
+		NoclipButton.Text = "Noclip     OFF"
+		NoclipButton.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	end
+end)
+
+--// Speed
+SpeedBox.FocusLost:Connect(function()
+	local Number = tonumber(SpeedBox.Text)
+
+	if Number then
+		Number = math.clamp(Number, 1, MAX_SPEED)
+		Speed = Number
+		SpeedBox.Text = tostring(Number)
+		SpeedLabel.Text = "Walk Speed: " .. Number .. " / 300"
+
+		if Humanoid then
+			Humanoid.WalkSpeed = Number
+		end
+	else
+		SpeedBox.Text = tostring(Speed)
+	end
+end)
+
+ResetButton.MouseButton1Click:Connect(function()
+	Speed = 16
+	SpeedBox.Text = "16"
+	SpeedLabel.Text = "Walk Speed: 16 / 300"
+
+	if Humanoid then
+		Humanoid.WalkSpeed = 16
+	end
+end)
+
+--// Fly
+local FlyVelocity
+local FlyGyro
+
+local function StopFly()
+	if FlyVelocity then
+		FlyVelocity:Destroy()
+		FlyVelocity = nil
+	end
+
+	if FlyGyro then
+		FlyGyro:Destroy()
+		FlyGyro = nil
+	end
+end
+
+local function StartFly()
+	if not RootPart then return end
+
+	FlyVelocity = Instance.new("BodyVelocity")
+	FlyVelocity.MaxForce = Vector3.new(100000,100000,100000)
+	FlyVelocity.Velocity = Vector3.zero
+	FlyVelocity.Parent = RootPart
+
+	FlyGyro = Instance.new("BodyGyro")
+	FlyGyro.MaxTorque = Vector3.new(100000,100000,100000)
+	FlyGyro.P = 10000
+	FlyGyro.CFrame = RootPart.CFrame
+	FlyGyro.Parent = RootPart
+end
+
+FlyButton.MouseButton1Click:Connect(function()
+	Fly = not Fly
+
+	if Fly then
+		FlyButton.Text = "Fly     ON"
+		FlyButton.BackgroundColor3 = Color3.fromRGB(45,110,70)
+		StartFly()
+	else
+		FlyButton.Text = "Fly     OFF"
+		FlyButton.BackgroundColor3 = Color3.fromRGB(40,40,40)
+		StopFly()
+	end
+end)
+
+--// Noclip loop
+RunService.Stepped:Connect(function()
+	if Noclip and Character then
+		for _,v in ipairs(Character:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.CanCollide = false
+			end
+		end
+	end
+end)
+
+--// Fly movement
+RunService.RenderStepped:Connect(function()
+	if not Character or not Humanoid or not RootPart then
+		return
+	end
+
+	if Fly and FlyVelocity and FlyGyro then
+		local Camera = workspace.CurrentCamera
+		local Move = Vector3.zero
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+			Move += Camera.CFrame.LookVector
+		end
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+			Move -= Camera.CFrame.LookVector
+		end
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+			Move -= Camera.CFrame.RightVector
+		end
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+			Move += Camera.CFrame.RightVector
+		end
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+			Move += Vector3.new(0,1,0)
+		end
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+			Move -= Vector3.new(0,1,0)
+		end
+
+		if Move.Magnitude > 0 then
+			Move = Move.Unit
+		end
+
+		FlyVelocity.Velocity = Move * Speed
+		FlyGyro.CFrame = Camera.CFrame
+
+		Humanoid.PlatformStand = true
+	else
+		if Humanoid.PlatformStand then
+			Humanoid.PlatformStand = false
+		end
+	end
+
+	if Humanoid then
+		Humanoid.WalkSpeed = Speed
+	end
+end)
+
+--// Close button
+Close.MouseButton1Click:Connect(function()
+	Main.Visible = false
+end)
+
+--// Draggable UI
+local function MakeDraggable(Frame)
+	local Dragging = false
+	local DragStart
+	local StartPos
+
+	Frame.InputBegan:Connect(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1
+			or Input.UserInputType == Enum.UserInputType.Touch then
+
+			Dragging = true
+			DragStart = Input.Position
+			StartPos = Frame.Position
+
+			Input.Changed:Connect(function()
+				if Input.UserInputState == Enum.UserInputState.End then
+					Dragging = false
+				end
+			end)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(Input)
+		if Dragging and (
+			Input.UserInputType == Enum.UserInputType.MouseMovement
+			or Input.UserInputType == Enum.UserInputType.Touch
+		) then
+
+			local Delta = Input.Position - DragStart
+
+			Frame.Position = UDim2.new(
+				StartPos.X.Scale,
+				StartPos.X.Offset + Delta.X,
+				StartPos.Y.Scale,
+				StartPos.Y.Offset + Delta.Y
+			)
+		end
+	end)
+end
+
+MakeDraggable(Main)
+MakeDraggable(KeyFrame)
